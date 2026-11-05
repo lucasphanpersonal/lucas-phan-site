@@ -225,7 +225,7 @@ a { color: #ffb4a3; }
 }
 /* Label is centred in the cap and cast with a one-pixel drop shadow. */
 .shoulder span {
-  position: absolute; left: 0; right: 0; top: calc(var(--u) * 2.4);
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
   text-align: center;
   font: calc(var(--u) * 2.4) 'Press Start 2P', monospace; line-height: 1;
   text-shadow: calc(var(--u) * 0.5) calc(var(--u) * 0.5) 0 #14151b;
