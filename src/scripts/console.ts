@@ -96,10 +96,24 @@ function announce(text: string) {
   requestAnimationFrame(() => { announceEl.textContent = text; });
 }
 
+/** Marks a scroll window with `data-more` while text is still hidden below it. */
+function updateScrollHint(el: HTMLElement) {
+  const more = el.scrollHeight - el.scrollTop - el.clientHeight > 2;
+  if (more) el.setAttribute('data-more', '');
+  else el.removeAttribute('data-more');
+}
+
 function render(speak = true) {
   const name = stack[stack.length - 1];
   views.forEach((v, k) => { v.hidden = k !== name; });
   const view = current();
+  view.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => {
+    updateScrollHint(el);
+    if (!el.dataset.hinted) {
+      el.dataset.hinted = '1';
+      el.addEventListener('scroll', () => updateScrollHint(el), { passive: true });
+    }
+  });
   const items = itemsOf(view);
   const idx = Math.min(cursor.get(name) ?? 0, Math.max(items.length - 1, 0));
   items.forEach((it, i) => {
