@@ -345,10 +345,17 @@ consoleEl.querySelectorAll<HTMLButtonElement>('[data-btn]').forEach((b) => {
   bindPress(b, () => press(b.dataset.btn as Btn));
 });
 
-// Click / tap directly on a menu item
+// Click / tap directly on a menu item. A drag that started on the screen
+// (e.g. a horizontal tilt drag) must not count as a tap on the item under it.
+let screenDown = { x: 0, y: 0, moved: false };
+screen.addEventListener('pointerdown', (e) => { screenDown = { x: e.clientX, y: e.clientY, moved: false }; });
+screen.addEventListener('pointermove', (e) => {
+  if (Math.hypot(e.clientX - screenDown.x, e.clientY - screenDown.y) > TAP_SLOP) screenDown.moved = true;
+});
 screen.addEventListener('click', (e) => {
   if (booting) { endBoot(); return; }
   if (Date.now() - skippedAt < 400) return;
+  if (screenDown.moved) return;
   const item = (e.target as HTMLElement).closest<HTMLElement>('[data-item]');
   if (!item) return;
   const items = itemsOf(current());
