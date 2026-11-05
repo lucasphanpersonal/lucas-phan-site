@@ -214,6 +214,7 @@ function press(btn: Btn) {
 /* ------------------------------------------------------------------ */
 let bootTimers: number[] = [];
 let skippedAt = 0;
+let bootStartedAt = 0;
 
 function boot(force = false) {
   const seen = store.get('lp-booted', sessionStorage) === '1';
@@ -224,6 +225,7 @@ function boot(force = false) {
   }
   store.set('lp-booted', '1', sessionStorage);
   booting = true;
+  bootStartedAt = performance.now();
   consoleEl.classList.add('on');
   views.forEach((v) => { v.hidden = true; });
   bootEl.hidden = false;
@@ -303,19 +305,33 @@ document.addEventListener('keyup', (e) => {
   }
 });
 
-// On-screen buttons
-// Fire on pointerdown like real hardware (snappier on touch, and the 3D tilt
-// can move a button between press and release). Keyboard activation of a
-// focused button arrives as a click with detail 0.
+/**
+ * On-screen buttons. We don't rely on `click`, because the 3D tilt can move a
+ * button between press and release and the browser then drops the click.
+ * - Mouse fires on pointerdown, like real hardware.
+ * - Touch/pen fire on pointerup (touch has implicit pointer capture, so the
+ *   release still lands on the button). Browsers only grant the user
+ *   activation needed for window.open() on touch at pointerup.
+ * - Keyboard activation of a focused button arrives as a click with detail 0.
+ */
+function bindPress(el: HTMLElement, fn: () => void) {
+  let armed: number | null = null;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || booting) { armed = null; return; } // a tap during the intro only skips it
+    if (e.pointerType === 'mouse') fn();
+    else armed = e.pointerId;
+  });
+  el.addEventListener('pointerup', (e) => {
+    if (e.pointerType === 'mouse' || armed !== e.pointerId) return;
+    armed = null;
+    fn();
+  });
+  el.addEventListener('pointercancel', () => { armed = null; });
+  el.addEventListener('click', (e) => { if (e.detail === 0) fn(); });
+}
+
 consoleEl.querySelectorAll<HTMLButtonElement>('[data-btn]').forEach((b) => {
-  b.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0) return;
-    if (booting) return; // the document-level handler skips the intro
-    press(b.dataset.btn as Btn);
-  });
-  b.addEventListener('click', (e) => {
-    if (e.detail === 0) press(b.dataset.btn as Btn);
-  });
+  bindPress(b, () => press(b.dataset.btn as Btn));
 });
 
 // Click / tap directly on a menu item
@@ -333,7 +349,10 @@ screen.addEventListener('click', (e) => {
 });
 
 // Tap anywhere on the device (or page) skips the intro
-document.addEventListener('pointerdown', () => { if (booting) endBoot(); });
+// (ignoring the very pointerdown that just started a replay from Config)
+document.addEventListener('pointerdown', () => {
+  if (booting && performance.now() - bootStartedAt > 150) endBoot();
+});
 
 document.querySelectorAll<HTMLElement>('[data-sound-toggle]').forEach((b) => {
   b.addEventListener('click', () => setSound(!soundOn));
@@ -364,8 +383,7 @@ function toggleLight() {
   lightBtn?.setAttribute('aria-pressed', String(lit));
   sfx.move();
 }
-lightBtn?.addEventListener('pointerdown', (e) => { if (e.button === 0 && !booting) toggleLight(); });
-lightBtn?.addEventListener('click', (e) => { if (e.detail === 0) toggleLight(); });
+if (lightBtn) bindPress(lightBtn, toggleLight);
 
 /* ------------------------------------------------------------------ */
 /* 3D tilt: follows the mouse; horizontal drag or device tilt on touch */
@@ -387,11 +405,13 @@ const rest = () => setTilt(REST.rx, REST.ry);
 
 function initTilt() {
   rest();
-  if (reducedMotion.matches) return;
+  // Re-checked on every event so turning on Reduce Motion takes effect live.
+  const still = () => reducedMotion.matches;
+  reducedMotion.addEventListener('change', () => { if (still()) rest(); });
 
   // Mouse / pen: tilt toward the pointer anywhere on the page
   document.addEventListener('pointermove', (e) => {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType === 'touch' || still()) return;
     const r = consoleEl.getBoundingClientRect();
     const nx = clamp((e.clientX - (r.left + r.width / 2)) / (innerWidth / 2), -1, 1);
     const ny = clamp((e.clientY - (r.top + r.height / 2)) / (innerHeight / 2), -1, 1);
@@ -403,7 +423,7 @@ function initTilt() {
   let startX = 0;
   let dragging = false;
   consoleEl.addEventListener('pointerdown', (e) => {
-    if (e.pointerType !== 'touch') return;
+    if (e.pointerType !== 'touch' || still()) return;
     startX = e.clientX;
     dragging = true;
     consoleEl.classList.add('dragging');
@@ -421,7 +441,7 @@ function initTilt() {
   const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: unknown } | undefined;
   if (DOE && typeof DOE.requestPermission !== 'function') {
     window.addEventListener('deviceorientation', (e) => {
-      if (dragging || e.beta == null || e.gamma == null) return;
+      if (dragging || still() || e.beta == null || e.gamma == null) return;
       setTilt(clamp((e.beta - 45) / 4, -8, 10), clamp(e.gamma / 3, -14, 14));
     });
   }

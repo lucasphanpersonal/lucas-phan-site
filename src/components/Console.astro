@@ -205,8 +205,12 @@ const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
 
     <!-- ===== BASE ===== -->
     <div class="base-half">
-      <button type="button" class="shoulder l" data-btn="l" aria-label="L shoulder, previous"><span>L</span></button>
-      <button type="button" class="shoulder r" data-btn="r" aria-label="R shoulder, next"><span>R</span></button>
+      <!-- L/R: the visible shoulders sit behind the hinge (like the real thing), so
+           each has a larger invisible hit target over its hinge knuckle. -->
+      <button type="button" class="shoulder-hit l" data-btn="l" aria-label="L shoulder, previous"></button>
+      <button type="button" class="shoulder-hit r" data-btn="r" aria-label="R shoulder, next"></button>
+      <span class="shoulder l" aria-hidden="true"><span>L</span></span>
+      <span class="shoulder r" aria-hidden="true"><span>R</span></span>
       <Extrude class="base-knuckle left" faceClass="cyl" />
       <Extrude class="base-knuckle right" faceClass="cyl" />
       <Extrude class="base-body" faceClass="shell">

@@ -83,7 +83,7 @@ a { color: #ffb4a3; }
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  touch-action: pan-y;
+  touch-action: pan-y pinch-zoom;
 }
 
 .floor {
@@ -172,16 +172,25 @@ a { color: #ffb4a3; }
   background: linear-gradient(180deg, #5a5b66, #2f3038);
   color: #c9cbd6;
   font: calc(var(--u) * 2.2) 'Press Start 2P', monospace;
-  cursor: pointer;
   transform: translateZ(calc(var(--depth) * -0.35));
-  touch-action: manipulation;
 }
 .shoulder span { position: absolute; top: calc(var(--u) * 0.9); }
 .shoulder.l { left: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 8) calc(var(--u) * 2) 0 0; }
 .shoulder.l span { left: calc(var(--u) * 6); }
 .shoulder.r { right: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 2) calc(var(--u) * 8) 0 0; }
 .shoulder.r span { right: calc(var(--u) * 6); }
-.shoulder:active, .shoulder.pressed { top: calc(var(--u) * -6); }
+.shoulder-hit.l:active ~ .shoulder.l, .shoulder-hit.l.pressed ~ .shoulder.l,
+.shoulder-hit.r:active ~ .shoulder.r, .shoulder-hit.r.pressed ~ .shoulder.r { top: calc(var(--u) * -6); }
+.shoulder-hit {
+  position: absolute; top: calc(var(--u) * -7);
+  width: calc(var(--u) * 21); height: calc(var(--u) * 19);
+  border: 0; padding: 0; background: transparent;
+  cursor: pointer; touch-action: manipulation;
+  transform: translateZ(2px);
+  border-radius: calc(var(--u) * 4);
+}
+.shoulder-hit.l { left: 0; }
+.shoulder-hit.r { right: 0; }
 
 /* ----- Lid: glossy lens with the screen and a personal wordmark ----- */
 .lens {
@@ -313,7 +322,7 @@ a { color: #ffb4a3; }
   translate: 0 0.6cqw;
   box-shadow: 0 0.2cqw 0 var(--btn-lo);
 }
-.d:focus-visible, .round:focus-visible, .small-btn:focus-visible, .light:focus-visible, .shoulder:focus-visible {
+.d:focus-visible, .round:focus-visible, .small-btn:focus-visible, .light:focus-visible, .shoulder-hit:focus-visible {
   outline: 0.8cqw solid var(--focus);
   outline-offset: 0.6cqw;
   z-index: 1;
@@ -543,12 +552,13 @@ kbd {
   .console { width: calc(var(--w) * 2.04); height: calc(var(--u) * 88); }
   .lid-half { transform: none; top: calc(var(--u) * 3); }
   .base-half { left: calc(var(--u) * 104); top: calc(var(--u) * -10); }
-  .lid-knuckle, .base-knuckle, .shoulder { display: none; }
+  .lid-knuckle, .base-knuckle, .shoulder, .shoulder-hit { display: none; }
   .floor { display: none; }
   .below { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .rig, .floor { transition: none; }
   [data-item].sel::before { animation: none; }
   .boot.run .boot-sub { animation: none; opacity: 1; }
 }
@@ -560,5 +570,5 @@ kbd {
 /* Only faces and controls take pointer events; the 3D wrappers share a
    plane with the faces and would otherwise steal hits. */
 .rig, .lid-half, .base-half, .x3d, .slab { pointer-events: none; }
-.x3d > .face, .shoulder { pointer-events: auto; }
+.x3d > .face, .shoulder-hit { pointer-events: auto; }
 .base-knuckle > .face, .lid-knuckle > .face { pointer-events: none; }
