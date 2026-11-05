@@ -355,7 +355,11 @@ screen.addEventListener('pointermove', (e) => {
 screen.addEventListener('click', (e) => {
   if (booting) { endBoot(); return; }
   if (Date.now() - skippedAt < 400) return;
-  if (screenDown.moved) return;
+  // Only pointer-originated clicks (detail > 0) can be drags; assistive-tech
+  // activations arrive with detail 0 and no pointer events.
+  const wasDrag = e.detail > 0 && screenDown.moved;
+  screenDown.moved = false;
+  if (wasDrag) return;
   const item = (e.target as HTMLElement).closest<HTMLElement>('[data-item]');
   if (!item) return;
   const items = itemsOf(current());
