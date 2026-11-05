@@ -7,7 +7,7 @@ links:
   - label: Play
     url: "https://guess-the-character.com"
   - label: Source
-    url: "#" # PLACEHOLDER: GitHub repo URL (the repo is private for now)
+    url: "https://github.com/lucasphanpersonal/guess-the-character-bot"
 status: live
 order: 1
 ---
