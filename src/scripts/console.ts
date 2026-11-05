@@ -5,7 +5,7 @@
  * `[data-item]` elements.
  */
 
-type Btn = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select';
+type Btn = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select' | 'l' | 'r';
 
 const consoleEl = document.querySelector<HTMLElement>('.console')!;
 const screen = document.getElementById('screen')!;
@@ -200,6 +200,8 @@ function press(btn: Btn) {
   if (Date.now() - skippedAt < 400) return;
   switch (btn) {
     case 'up': case 'down': case 'left': case 'right': move(btn); break;
+    case 'l': move('left'); break;
+    case 'r': move('right'); break;
     case 'a': activate(); break;
     case 'b': if (back()) sfx.back(); break;
     case 'start': if (stack.length > 1 || stack[0] !== 'main') { sfx.back(); home(); } break;
@@ -302,8 +304,18 @@ document.addEventListener('keyup', (e) => {
 });
 
 // On-screen buttons
+// Fire on pointerdown like real hardware (snappier on touch, and the 3D tilt
+// can move a button between press and release). Keyboard activation of a
+// focused button arrives as a click with detail 0.
 consoleEl.querySelectorAll<HTMLButtonElement>('[data-btn]').forEach((b) => {
-  b.addEventListener('click', () => press(b.dataset.btn as Btn));
+  b.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    if (booting) return; // the document-level handler skips the intro
+    press(b.dataset.btn as Btn);
+  });
+  b.addEventListener('click', (e) => {
+    if (e.detail === 0) press(b.dataset.btn as Btn);
+  });
 });
 
 // Click / tap directly on a menu item
@@ -344,5 +356,78 @@ tick();
 window.setInterval(tick, 1000);
 
 /* ------------------------------------------------------------------ */
+/* Screen light button                                                 */
+/* ------------------------------------------------------------------ */
+const lightBtn = consoleEl.querySelector<HTMLButtonElement>('[data-light]');
+function toggleLight() {
+  const lit = consoleEl.classList.toggle('dim') === false;
+  lightBtn?.setAttribute('aria-pressed', String(lit));
+  sfx.move();
+}
+lightBtn?.addEventListener('pointerdown', (e) => { if (e.button === 0 && !booting) toggleLight(); });
+lightBtn?.addEventListener('click', (e) => { if (e.detail === 0) toggleLight(); });
+
+/* ------------------------------------------------------------------ */
+/* 3D tilt: follows the mouse; horizontal drag or device tilt on touch */
+/* ------------------------------------------------------------------ */
+// Phones rest flat so the small pixel text stays crisp; desktop rests at a slight angle.
+const coarse = matchMedia('(pointer: coarse)').matches;
+const REST = coarse ? { rx: 0, ry: 0 } : { rx: 4, ry: -6 };
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+function setTilt(rx: number, ry: number) {
+  const st = consoleEl.style;
+  st.setProperty('--rx', `${rx.toFixed(2)}deg`);
+  st.setProperty('--ry', `${ry.toFixed(2)}deg`);
+  // move the specular highlight opposite to the tilt
+  st.setProperty('--mx', `${(50 - ry * 3).toFixed(1)}%`);
+  st.setProperty('--my', `${(20 + rx * 3).toFixed(1)}%`);
+}
+const rest = () => setTilt(REST.rx, REST.ry);
+
+function initTilt() {
+  rest();
+  if (reducedMotion.matches) return;
+
+  // Mouse / pen: tilt toward the pointer anywhere on the page
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch') return;
+    const r = consoleEl.getBoundingClientRect();
+    const nx = clamp((e.clientX - (r.left + r.width / 2)) / (innerWidth / 2), -1, 1);
+    const ny = clamp((e.clientY - (r.top + r.height / 2)) / (innerHeight / 2), -1, 1);
+    setTilt(-ny * 10, nx * 16);
+  });
+  document.documentElement.addEventListener('pointerleave', rest);
+
+  // Touch: horizontal drag on the device turns it (vertical drag still scrolls)
+  let startX = 0;
+  let dragging = false;
+  consoleEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch') return;
+    startX = e.clientX;
+    dragging = true;
+    consoleEl.classList.add('dragging');
+  });
+  consoleEl.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerType !== 'touch') return;
+    const dx = (e.clientX - startX) / consoleEl.clientWidth;
+    setTilt(REST.rx, clamp(REST.ry + dx * 40, -18, 18));
+  });
+  const end = () => { dragging = false; consoleEl.classList.remove('dragging'); rest(); };
+  consoleEl.addEventListener('pointerup', end);
+  consoleEl.addEventListener('pointercancel', end);
+
+  // Phones that expose orientation without a permission prompt
+  const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: unknown } | undefined;
+  if (DOE && typeof DOE.requestPermission !== 'function') {
+    window.addEventListener('deviceorientation', (e) => {
+      if (dragging || e.beta == null || e.gamma == null) return;
+      setTilt(clamp((e.beta - 45) / 4, -8, 10), clamp(e.gamma / 3, -14, 14));
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+initTilt();
 setSound(soundOn, true);
 boot();

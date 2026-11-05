@@ -1,12 +1,14 @@
 ---
 /**
- * The handheld: lid (screen) + hinge + base (controls).
+ * The handheld: an open clamshell. Lid (screen) + hinge knuckles + base (controls),
+ * each piece extruded for a 3D look and tilted by console.ts.
  * Every menu "view" is real HTML rendered here at build time; console.ts only
  * shows/hides views and moves the cursor.
  */
 import { profile, abilities, contacts } from '../data/profile';
 import { getProjects, formatDate, url, isExternal } from '../data/util';
 import { handSprite, portraitSprite, svgDataUri } from '../data/pixels';
+import Extrude from './Extrude.astro';
 
 const projects = await getProjects();
 const filled = projects.filter((p) => p.data.status !== 'empty').length;
@@ -15,16 +17,15 @@ const pad = (n: number) => String(n).padStart(2, ' ');
 const pct = (now: number, max: number) => `${Math.round((now / max) * 100)}%`;
 const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
 ---
-<div class="console" style={`--hand: url("${hand}")`}>
-  <!-- ===== LID ===== -->
-  <div class="lid">
-    <div class="bezel">
-      <div class="bezel-row">
-        <span class="led" aria-hidden="true"></span>
-        <span class="bezel-label">LUCAS PHAN</span>
-        <span class="bezel-mark" aria-hidden="true">◆ POCKET EDITION</span>
-      </div>
-
+<div class="console" data-device style={`--hand: url("${hand}")`}>
+  <div class="floor" aria-hidden="true"></div>
+  <div class="rig">
+    <!-- ===== LID ===== -->
+    <div class="lid-half">
+      <Extrude class="lid-knuckle" faceClass="cyl" />
+      <Extrude class="lid-body" faceClass="shell">
+        <span class="sheen" aria-hidden="true"></span>
+        <div class="lens">
       <div
         class="screen"
         id="screen"
@@ -197,43 +198,55 @@ const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
         </section>
       </div>
 
-      <p class="bezel-sub" aria-hidden="true">LP-01 · COLOR DISPLAY</p>
-    </div>
-  </div>
-
-  <div class="hinge" aria-hidden="true"><i></i><i></i></div>
-
-  <!-- ===== BASE ===== -->
-  <div class="base">
-    <div class="power" aria-hidden="true"><span class="power-led"></span> POWER</div>
-
-    <div class="dpad" role="group" aria-label="Direction pad">
-      <button type="button" class="d up" data-btn="up" aria-label="Up"></button>
-      <button type="button" class="d left" data-btn="left" aria-label="Left"></button>
-      <span class="d mid" aria-hidden="true"></span>
-      <button type="button" class="d right" data-btn="right" aria-label="Right"></button>
-      <button type="button" class="d down" data-btn="down" aria-label="Down"></button>
+          <p class="lens-logo" aria-hidden="true">LUCAS PHAN</p>
+        </div>
+      </Extrude>
     </div>
 
-    <div class="ab" role="group" aria-label="Action buttons">
-      <button type="button" class="round b" data-btn="b" aria-label="B, back">B</button>
-      <button type="button" class="round a" data-btn="a" aria-label="A, select">A</button>
-    </div>
+    <!-- ===== BASE ===== -->
+    <div class="base-half">
+      <button type="button" class="shoulder l" data-btn="l" aria-label="L shoulder, previous"><span>L</span></button>
+      <button type="button" class="shoulder r" data-btn="r" aria-label="R shoulder, next"><span>R</span></button>
+      <Extrude class="base-knuckle left" faceClass="cyl" />
+      <Extrude class="base-knuckle right" faceClass="cyl" />
+      <Extrude class="base-body" faceClass="shell">
+        <span class="sheen" aria-hidden="true"></span>
 
-    <div class="ss" role="group" aria-label="Start and Select">
-      <span class="pill-wrap">
-        <button type="button" class="pill" data-btn="select" aria-label="Select, open config"></button>
-        <span aria-hidden="true">SELECT</span>
-      </span>
-      <span class="pill-wrap">
-        <button type="button" class="pill" data-btn="start" aria-label="Start, main menu"></button>
-        <span aria-hidden="true">START</span>
-      </span>
-    </div>
+        <div class="dpad" role="group" aria-label="Direction pad">
+          <button type="button" class="d up" data-btn="up" aria-label="Up"></button>
+          <button type="button" class="d left" data-btn="left" aria-label="Left"></button>
+          <span class="d mid" aria-hidden="true"></span>
+          <button type="button" class="d right" data-btn="right" aria-label="Right"></button>
+          <button type="button" class="d down" data-btn="down" aria-label="Down"></button>
+        </div>
 
-    <div class="logo" aria-hidden="true">LP</div>
-    <div class="speaker" aria-hidden="true">
-      {Array.from({ length: 12 }).map(() => <i></i>)}
+        <button type="button" class="light" data-light aria-pressed="true" aria-label="Screen light">
+          <span aria-hidden="true">☀</span>
+        </button>
+
+        <button type="button" class="round b" data-btn="b" aria-label="B, back">B</button>
+        <button type="button" class="round a" data-btn="a" aria-label="A, select">A</button>
+
+        <div class="ss" role="group" aria-label="Start and Select">
+          <span class="ss-wrap">
+            <button type="button" class="small-btn" data-btn="select" aria-label="Select, open config"></button>
+            <span aria-hidden="true">SELECT</span>
+          </span>
+          <span class="ss-wrap">
+            <button type="button" class="small-btn" data-btn="start" aria-label="Start, main menu"></button>
+            <span aria-hidden="true">START</span>
+          </span>
+        </div>
+
+        <div class="leds" aria-hidden="true">
+          <span><i class="power-led"></i>POWER</span>
+          <span><i class="batt-led"></i>CHG</span>
+        </div>
+
+        <div class="speaker" aria-hidden="true">
+          {Array.from({ length: 25 }).map(() => <i></i>)}
+        </div>
+      </Extrude>
     </div>
   </div>
 
