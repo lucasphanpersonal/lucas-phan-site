@@ -7,7 +7,7 @@
  */
 import { profile, abilities, contacts } from '../data/profile';
 import { getProjects, formatDate, url, isExternal } from '../data/util';
-import { handSprite, portraitSprite, svgDataUri, coverArt } from '../data/pixels';
+import { handSprite, portraitSprite, huskySprite, svgDataUri, coverArt } from '../data/pixels';
 import Extrude from './Extrude.astro';
 
 const projects = await getProjects();
@@ -85,7 +85,10 @@ const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
         <!-- STATUS -->
         <section class="view v-status" data-view="status" aria-label="Status" hidden>
           <div class="win status-top">
-            <div class="portrait" set:html={portraitSprite} />
+            <div class="party-sprites">
+              <div class="portrait" set:html={portraitSprite} />
+              <div class="pet" set:html={huskySprite} />
+            </div>
             <div class="status-id">
               <p class="hl">{profile.name}</p>
               <p><span class="lbl">Job</span> {profile.job}</p>
