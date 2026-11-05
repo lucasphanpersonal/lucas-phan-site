@@ -436,7 +436,7 @@ function initTilt() {
     consoleEl.classList.add('dragging');
   });
   consoleEl.addEventListener('pointermove', (e) => {
-    if (!dragging || e.pointerType !== 'touch') return;
+    if (!dragging || e.pointerType !== 'touch' || still()) return;
     const dx = (e.clientX - startX) / consoleEl.clientWidth;
     setTilt(REST.rx, clamp(REST.ry + dx * 40, -18, 18));
   });
