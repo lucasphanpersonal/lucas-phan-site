@@ -96,6 +96,18 @@ function announce(text: string) {
   requestAnimationFrame(() => { announceEl.textContent = text; });
 }
 
+/** Marks a scroll window with `data-more` while text is still hidden below it. */
+function updateScrollHint(el: HTMLElement) {
+  const more = el.scrollHeight - el.scrollTop - el.clientHeight > 2;
+  if (more) el.setAttribute('data-more', '');
+  else el.removeAttribute('data-more');
+}
+
+// Resizing the viewport rescales the text and the window, so re-check the hint on size changes too.
+const scrollResize = new ResizeObserver((entries) => {
+  entries.forEach((e) => updateScrollHint(e.target as HTMLElement));
+});
+
 function render(speak = true) {
   const name = stack[stack.length - 1];
   views.forEach((v, k) => { v.hidden = k !== name; });
@@ -111,6 +123,15 @@ function render(speak = true) {
   sel?.scrollIntoView({ block: 'nearest' });
   const help = sel?.dataset.help ?? '';
   view.querySelectorAll<HTMLElement>('[data-help-out]').forEach((h) => { h.textContent = help; });
+  // Measure only after the text above is in place, so the hint matches the new description.
+  view.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => {
+    updateScrollHint(el);
+    if (!el.dataset.hinted) {
+      el.dataset.hinted = '1';
+      el.addEventListener('scroll', () => updateScrollHint(el), { passive: true });
+      scrollResize.observe(el);
+    }
+  });
   if (speak) {
     const label = view.getAttribute('aria-label') ?? '';
     const itemText = sel?.textContent?.replace(/\s+/g, ' ').trim();
@@ -158,6 +179,18 @@ function move(dir: 'up' | 'down' | 'left' | 'right') {
       scroller.scrollBy({ top: (dir === 'down' ? 1 : -1) * scroller.clientHeight * 0.5 });
     }
     return;
+  }
+
+  // Up/Down scroll a text window first (e.g. a long project description above its
+  // links), then move the cursor once the window reaches that edge.
+  const scroller = view.querySelector<HTMLElement>('[data-scroll]');
+  if (scroller && (dir === 'up' || dir === 'down')) {
+    const canDown = scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1;
+    const canUp = scroller.scrollTop > 0;
+    if ((dir === 'down' && canDown) || (dir === 'up' && canUp)) {
+      scroller.scrollBy({ top: (dir === 'down' ? 1 : -1) * scroller.clientHeight * 0.5 });
+      return;
+    }
   }
 
   const cols = Number(view.querySelector<HTMLElement>('[data-cols]')?.dataset.cols ?? 1);
