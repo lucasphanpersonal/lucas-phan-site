@@ -314,12 +314,19 @@ document.addEventListener('keyup', (e) => {
  *   activation needed for window.open() on touch at pointerup.
  * - Keyboard activation of a focused button arrives as a click with detail 0.
  */
+const TAP_SLOP = 10; // px a finger may move before a press becomes a tilt drag
+
 function bindPress(el: HTMLElement, fn: () => void) {
   let armed: number | null = null;
+  let downX = 0;
+  let downY = 0;
   el.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || booting) { armed = null; return; } // a tap during the intro only skips it
     if (e.pointerType === 'mouse') fn();
-    else armed = e.pointerId;
+    else { armed = e.pointerId; downX = e.clientX; downY = e.clientY; }
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (armed === e.pointerId && Math.hypot(e.clientX - downX, e.clientY - downY) > TAP_SLOP) armed = null;
   });
   el.addEventListener('pointerup', (e) => {
     if (e.pointerType === 'mouse' || armed !== e.pointerId) return;
