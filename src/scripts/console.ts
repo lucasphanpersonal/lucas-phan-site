@@ -308,32 +308,36 @@ document.addEventListener('keyup', (e) => {
 /**
  * On-screen buttons. We don't rely on `click`, because the 3D tilt can move a
  * button between press and release and the browser then drops the click.
- * - Mouse fires on pointerdown, like real hardware.
- * - Touch/pen fire on pointerup (touch has implicit pointer capture, so the
- *   release still lands on the button). Browsers only grant the user
- *   activation needed for window.open() on touch at pointerup.
- * - Keyboard activation of a focused button arrives as a click with detail 0.
+ * Instead every pointer type arms on pointerdown (capturing the pointer so the
+ * release lands on the button even if the device tilts away) and fires on
+ * pointerup, unless the press was cancelled or became a drag (TAP_SLOP).
+ * Firing on release keeps press cancellation (WCAG 2.5.2) and is when touch
+ * grants the user activation window.open() needs.
+ * Keyboard activation of a focused button arrives as a click with detail 0.
  */
-const TAP_SLOP = 10; // px a finger may move before a press becomes a tilt drag
+const TAP_SLOP = 10; // px a pointer may move before a press becomes a drag
 
 function bindPress(el: HTMLElement, fn: () => void) {
   let armed: number | null = null;
   let downX = 0;
   let downY = 0;
   el.addEventListener('pointerdown', (e) => {
-    if (e.button !== 0 || booting) { armed = null; return; } // a tap during the intro only skips it
-    if (e.pointerType === 'mouse') fn();
-    else { armed = e.pointerId; downX = e.clientX; downY = e.clientY; }
+    if (e.button !== 0 || booting) { armed = null; return; } // a press during the intro only skips it
+    armed = e.pointerId;
+    downX = e.clientX;
+    downY = e.clientY;
+    try { el.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
   });
   el.addEventListener('pointermove', (e) => {
     if (armed === e.pointerId && Math.hypot(e.clientX - downX, e.clientY - downY) > TAP_SLOP) armed = null;
   });
   el.addEventListener('pointerup', (e) => {
-    if (e.pointerType === 'mouse' || armed !== e.pointerId) return;
+    if (armed !== e.pointerId) return;
     armed = null;
     fn();
   });
   el.addEventListener('pointercancel', () => { armed = null; });
+  el.addEventListener('lostpointercapture', () => { armed = null; });
   el.addEventListener('click', (e) => { if (e.detail === 0) fn(); });
 }
 
