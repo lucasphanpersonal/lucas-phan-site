@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api -X POST repos/lucasphanpersonal/lucas-phan-site/pulls/*/comments/*/replies *)",
+      "Bash(gh api -X POST repos/lucasphanpersonal/lucas-phan-site/pulls/*/ccr/comments/*/resolve)"
+    ]
+  }
+}
