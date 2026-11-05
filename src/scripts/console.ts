@@ -103,6 +103,11 @@ function updateScrollHint(el: HTMLElement) {
   else el.removeAttribute('data-more');
 }
 
+// Resizing the viewport rescales the text and the window, so re-check the hint on size changes too.
+const scrollResize = new ResizeObserver((entries) => {
+  entries.forEach((e) => updateScrollHint(e.target as HTMLElement));
+});
+
 function render(speak = true) {
   const name = stack[stack.length - 1];
   views.forEach((v, k) => { v.hidden = k !== name; });
@@ -112,6 +117,7 @@ function render(speak = true) {
     if (!el.dataset.hinted) {
       el.dataset.hinted = '1';
       el.addEventListener('scroll', () => updateScrollHint(el), { passive: true });
+      scrollResize.observe(el);
     }
   });
   const items = itemsOf(view);
