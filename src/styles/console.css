@@ -214,16 +214,24 @@ a { color: #ffb4a3; }
   position: absolute; top: calc(var(--u) * -7);
   width: calc(var(--u) * 21); height: calc(var(--u) * 9);
   border: 0; padding: 0;
-  background: linear-gradient(180deg, #5a5b66, #2f3038);
-  color: #c9cbd6;
-  font: calc(var(--u) * 2.2) 'Press Start 2P', monospace;
+  /* Hard colour bands and a stepped silhouette, like the other pixel controls. */
+  background: linear-gradient(180deg, #7a7c89 0 14%, #4d4e59 14% 78%, #2f3038 78%);
+  clip-path: polygon(
+    14% 0, 86% 0, 86% 12%, 93% 12%, 93% 24%, 100% 24%, 100% 100%,
+    0 100%, 0 24%, 7% 24%, 7% 12%, 14% 12%);
+  color: #e4e6f0;
   transform: translateZ(calc(var(--depth) * -0.35));
+  pointer-events: none;
 }
-.shoulder span { position: absolute; top: calc(var(--u) * 0.9); }
-.shoulder.l { left: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 8) calc(var(--u) * 2) 0 0; }
-.shoulder.l span { left: calc(var(--u) * 6); }
-.shoulder.r { right: calc(var(--u) * 0.5); border-radius: calc(var(--u) * 2) calc(var(--u) * 8) 0 0; }
-.shoulder.r span { right: calc(var(--u) * 6); }
+/* Label is centred in the cap and cast with a one-pixel drop shadow. */
+.shoulder span {
+  position: absolute; left: 0; right: 0; top: calc(var(--u) * 2.4);
+  text-align: center;
+  font: calc(var(--u) * 2.4) 'Press Start 2P', monospace; line-height: 1;
+  text-shadow: calc(var(--u) * 0.5) calc(var(--u) * 0.5) 0 #14151b;
+}
+.shoulder.l { left: calc(var(--u) * 0.5); }
+.shoulder.r { right: calc(var(--u) * 0.5); }
 .shoulder-hit.l:active ~ .shoulder.l, .shoulder-hit.l.pressed ~ .shoulder.l,
 .shoulder-hit.r:active ~ .shoulder.r, .shoulder-hit.r.pressed ~ .shoulder.r { top: calc(var(--u) * -6); }
 .shoulder-hit {
