@@ -342,6 +342,9 @@ a { color: #ffb4a3; }
   translate: 0 0.6cqw;
   box-shadow: 0 0.2cqw 0 var(--btn-lo);
 }
+/* Clipped buttons keep a lower lip while pressed (their outer shadow is clipped). */
+.round:active, .round.pressed { box-shadow: inset 0 -0.8cqw 0 var(--btn-lo); }
+.small-btn:active, .small-btn.pressed { box-shadow: inset 0 -0.6cqw 0 var(--btn-lo); }
 .d:focus-visible, .round:focus-visible, .small-btn:focus-visible, .light:focus-visible, .shoulder-hit:focus-visible {
   outline: 0.8cqw solid var(--focus);
   outline-offset: 0.6cqw;
