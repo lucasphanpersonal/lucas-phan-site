@@ -7,17 +7,18 @@
  */
 import { profile, abilities, contacts } from '../data/profile';
 import { getProjects, formatDate, url, isExternal } from '../data/util';
-import { handSprite, portraitSprite, svgDataUri } from '../data/pixels';
+import { handSprite, portraitSprite, svgDataUri, coverArt } from '../data/pixels';
 import Extrude from './Extrude.astro';
 
 const projects = await getProjects();
 const filled = projects.filter((p) => p.data.status !== 'empty').length;
 const hand = svgDataUri(handSprite);
+const cover = svgDataUri(coverArt.monogram);
 const pad = (n: number) => String(n).padStart(2, ' ');
 const pct = (now: number, max: number) => `${Math.round((now / max) * 100)}%`;
 const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
 ---
-<div class="console" data-device style={`--hand: url("${hand}")`}>
+<div class="console" data-device data-lid="closed" style={`--hand: url("${hand}"); --cover: url("${cover}")`}>
   <div class="floor" aria-hidden="true"></div>
   <div class="rig">
     <!-- ===== LID ===== -->
@@ -25,6 +26,9 @@ const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
       <Extrude class="lid-knuckle" faceClass="cyl" />
       <Extrude class="lid-body" faceClass="shell">
         <span class="sheen" aria-hidden="true"></span>
+        <button type="button" class="cover" data-open-lid aria-label="Open the handheld">
+          <span class="cover-art" aria-hidden="true"></span>
+        </button>
         <div class="lens">
       <div
         class="screen"
@@ -192,6 +196,7 @@ const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
             </li>
             <li data-item data-action="replay" data-help="Watch the power-on intro again">Replay intro</li>
             <li data-item data-action={`link:${url('/about/')}`} data-help="Same info, no game">Plain version</li>
+            <li data-item data-action="close-lid" data-help="Fold the lid shut">Close lid</li>
             <li data-item data-action="back" data-help="Close this window">Back</li>
           </ul>
           <p class="win help" data-help-out></p>

@@ -121,11 +121,41 @@ a { color: #ffb4a3; }
   position: absolute; left: 0; width: var(--w);
   transform-style: preserve-3d;
 }
+/* The lid swings on its hinge. --lid and --lidz are registered so they
+   transition smoothly between the open and closed states. */
+@property --lid { syntax: '<angle>'; inherits: true; initial-value: 14deg; }
+@property --lidz { syntax: '<length>'; inherits: true; initial-value: 0px; }
 .lid-half {
   top: 0;
   height: calc(var(--u) * 93);
   transform-origin: 50% calc(var(--u) * 87.5);
-  transform: rotateX(var(--lid));
+  transform: translateZ(var(--lidz)) rotateX(var(--lid));
+  transition: --lid 0.9s cubic-bezier(0.45, 0, 0.2, 1), --lidz 0.9s cubic-bezier(0.45, 0, 0.2, 1);
+}
+
+/* Closed: the lid folds forward over the base and shows its cover.
+   Only applies with JavaScript (.js is set before first paint). */
+.js .console[data-lid='closed'] { --lid: -180deg; --lidz: calc(var(--u) * 16); }
+.js .console[data-lid='closed'] .lens { visibility: hidden; }
+/* Flipped, the extruded edge faces the viewer. Move the face out to that
+   outer edge so the cover sits on top of the slabs, not behind them. */
+.js .console[data-lid='closed'] .lid-body > .face {
+  transform: translateZ(calc(var(--depth) * -1 - 0.5px));
+}
+
+/* The cover is the lid's outer face. The lid is flipped, so the cover flips
+   back to read upright. */
+.cover { display: none; }
+.js .console[data-lid='closed'] .cover {
+  display: block; position: absolute; inset: 0; z-index: 2;
+  padding: 0; border: 0; background: none; cursor: pointer;
+  transform: rotateX(180deg);
+}
+.cover:focus-visible { outline: 3px solid var(--focus); outline-offset: -6px; }
+.cover-art {
+  position: absolute; inset: 7% 8%;
+  background: var(--cover) center / contain no-repeat;
+  image-rendering: pixelated;
 }
 .base-half {
   top: calc(var(--u) * 82);
@@ -601,6 +631,9 @@ kbd {
   :root { --w: min(45vw, 440px, calc((100svh - 1.5rem) / 0.9)); }
   .console { width: calc(var(--w) * 2.04); height: calc(var(--u) * 88); }
   .lid-half { transform: none; top: calc(var(--u) * 3); }
+  /* The lid stays open here, so the cover must not be flipped. */
+  .js .console[data-lid='closed'] .cover { transform: none; }
+  .js .console[data-lid='closed'] .lid-body > .face { transform: none; }
   .base-half { left: calc(var(--u) * 104); top: calc(var(--u) * -10); }
   .lid-knuckle, .base-knuckle, .shoulder, .shoulder-hit { display: none; }
   .floor { display: none; }
@@ -608,7 +641,7 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .rig, .floor { transition: none; }
+  .rig, .floor, .lid-half { transition: none; }
   [data-item].sel::before { animation: none; }
   .view:not([hidden]) { animation: none; }
   .boot.run .boot-sub { animation: none; opacity: 1; }
