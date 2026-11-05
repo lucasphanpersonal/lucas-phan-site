@@ -56,7 +56,8 @@ own file). Keep titles under ~22 characters so they fit on one slot line.
 | Skills on the Abilities screen | `src/data/profile.ts` (`abilities`) |
 | Contact links | `src/data/profile.ts` (`contacts`) |
 | Portrait sprite and cursor | `src/data/pixels.ts` (text-grid pixel art) |
-| Console colors | variables at the top of `src/styles/console.css` |
+| Console colors | variables at the top of `src/styles/console.css` (`--shell*`, `--btn*`) |
+| Device shape / 3D | "Device" section of `src/styles/console.css` (sized in `--u`, 1% of device width) |
 | Boot chime / menu sounds | `sfx` in `src/scripts/console.ts` |
 | Social preview image | `public/og.png` (1200×630) |
 | Site URL | `site` in `astro.config.mjs` or the `SITE_URL` env var |
@@ -72,8 +73,10 @@ Search the project for `PLACEHOLDER` to find everything still to fill in.
 | Back (B) | Backspace / L / Esc | B |
 | Main menu (Start) | Space | START |
 | Config (Select) | Shift (tap alone) | SELECT |
+| Previous / next | | L / R shoulders |
+| Screen light | | ☀ button |
 
-You can also click or tap menu items directly. The boot splash plays once per
+The device tilts in 3D toward the mouse; on phones it rests flat and turns with a horizontal drag (or the phone's tilt, where the browser allows it). You can also click or tap menu items directly. The boot splash plays once per
 browser session, can be skipped with any key/click/tap, and is skipped
 entirely when the visitor has `prefers-reduced-motion` set. Sound is off by
 default and remembered once turned on.

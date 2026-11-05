@@ -1,0 +1,14 @@
+---
+/**
+ * A flat shape with fake thickness: N stacked "slabs" behind a front face.
+ * Shape (size, radius) comes from the `class`; depth from --depth.
+ */
+interface Props { class: string; faceClass?: string; slices?: number }
+const { class: cls, faceClass = '', slices = 10 } = Astro.props;
+---
+<div class={`x3d ${cls}`} style={`--n:${slices}`}>
+  {Array.from({ length: slices }, (_, i) => (
+    <span class="slab" style={`--i:${i + 1}`} aria-hidden="true"></span>
+  ))}
+  <div class={`face ${faceClass}`}><slot /></div>
+</div>

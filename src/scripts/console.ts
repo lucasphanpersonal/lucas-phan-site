@@ -5,7 +5,7 @@
  * `[data-item]` elements.
  */
 
-type Btn = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select';
+type Btn = 'up' | 'down' | 'left' | 'right' | 'a' | 'b' | 'start' | 'select' | 'l' | 'r';
 
 const consoleEl = document.querySelector<HTMLElement>('.console')!;
 const screen = document.getElementById('screen')!;
@@ -200,6 +200,8 @@ function press(btn: Btn) {
   if (Date.now() - skippedAt < 400) return;
   switch (btn) {
     case 'up': case 'down': case 'left': case 'right': move(btn); break;
+    case 'l': move('left'); break;
+    case 'r': move('right'); break;
     case 'a': activate(); break;
     case 'b': if (back()) sfx.back(); break;
     case 'start': if (stack.length > 1 || stack[0] !== 'main') { sfx.back(); home(); } break;
@@ -212,6 +214,7 @@ function press(btn: Btn) {
 /* ------------------------------------------------------------------ */
 let bootTimers: number[] = [];
 let skippedAt = 0;
+let bootStartedAt = 0;
 
 function boot(force = false) {
   const seen = store.get('lp-booted', sessionStorage) === '1';
@@ -222,6 +225,7 @@ function boot(force = false) {
   }
   store.set('lp-booted', '1', sessionStorage);
   booting = true;
+  bootStartedAt = performance.now();
   consoleEl.classList.add('on');
   views.forEach((v) => { v.hidden = true; });
   bootEl.hidden = false;
@@ -301,15 +305,61 @@ document.addEventListener('keyup', (e) => {
   }
 });
 
-// On-screen buttons
+/**
+ * On-screen buttons. We don't rely on `click`, because the 3D tilt can move a
+ * button between press and release and the browser then drops the click.
+ * Instead every pointer type arms on pointerdown (capturing the pointer so the
+ * release lands on the button even if the device tilts away) and fires on
+ * pointerup, unless the press was cancelled or became a drag (TAP_SLOP).
+ * Firing on release keeps press cancellation (WCAG 2.5.2) and is when touch
+ * grants the user activation window.open() needs.
+ * Keyboard activation of a focused button arrives as a click with detail 0.
+ */
+const TAP_SLOP = 10; // px a pointer may move before a press becomes a drag
+
+function bindPress(el: HTMLElement, fn: () => void) {
+  let armed: number | null = null;
+  let downX = 0;
+  let downY = 0;
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || booting) { armed = null; return; } // a press during the intro only skips it
+    armed = e.pointerId;
+    downX = e.clientX;
+    downY = e.clientY;
+    try { el.setPointerCapture(e.pointerId); } catch { /* pointer already gone */ }
+  });
+  el.addEventListener('pointermove', (e) => {
+    if (armed === e.pointerId && Math.hypot(e.clientX - downX, e.clientY - downY) > TAP_SLOP) armed = null;
+  });
+  el.addEventListener('pointerup', (e) => {
+    if (armed !== e.pointerId) return;
+    armed = null;
+    fn();
+  });
+  el.addEventListener('pointercancel', () => { armed = null; });
+  el.addEventListener('lostpointercapture', () => { armed = null; });
+  el.addEventListener('click', (e) => { if (e.detail === 0) fn(); });
+}
+
 consoleEl.querySelectorAll<HTMLButtonElement>('[data-btn]').forEach((b) => {
-  b.addEventListener('click', () => press(b.dataset.btn as Btn));
+  bindPress(b, () => press(b.dataset.btn as Btn));
 });
 
-// Click / tap directly on a menu item
+// Click / tap directly on a menu item. A drag that started on the screen
+// (e.g. a horizontal tilt drag) must not count as a tap on the item under it.
+let screenDown = { x: 0, y: 0, moved: false };
+screen.addEventListener('pointerdown', (e) => { screenDown = { x: e.clientX, y: e.clientY, moved: false }; });
+screen.addEventListener('pointermove', (e) => {
+  if (Math.hypot(e.clientX - screenDown.x, e.clientY - screenDown.y) > TAP_SLOP) screenDown.moved = true;
+});
 screen.addEventListener('click', (e) => {
   if (booting) { endBoot(); return; }
   if (Date.now() - skippedAt < 400) return;
+  // Only pointer-originated clicks (detail > 0) can be drags; assistive-tech
+  // activations arrive with detail 0 and no pointer events.
+  const wasDrag = e.detail > 0 && screenDown.moved;
+  screenDown.moved = false;
+  if (wasDrag) return;
   const item = (e.target as HTMLElement).closest<HTMLElement>('[data-item]');
   if (!item) return;
   const items = itemsOf(current());
@@ -321,7 +371,10 @@ screen.addEventListener('click', (e) => {
 });
 
 // Tap anywhere on the device (or page) skips the intro
-document.addEventListener('pointerdown', () => { if (booting) endBoot(); });
+// (ignoring the very pointerdown that just started a replay from Config)
+document.addEventListener('pointerdown', () => {
+  if (booting && performance.now() - bootStartedAt > 150) endBoot();
+});
 
 document.querySelectorAll<HTMLElement>('[data-sound-toggle]').forEach((b) => {
   b.addEventListener('click', () => setSound(!soundOn));
@@ -344,5 +397,79 @@ tick();
 window.setInterval(tick, 1000);
 
 /* ------------------------------------------------------------------ */
+/* Screen light button                                                 */
+/* ------------------------------------------------------------------ */
+const lightBtn = consoleEl.querySelector<HTMLButtonElement>('[data-light]');
+function toggleLight() {
+  const lit = consoleEl.classList.toggle('dim') === false;
+  lightBtn?.setAttribute('aria-pressed', String(lit));
+  sfx.move();
+}
+if (lightBtn) bindPress(lightBtn, toggleLight);
+
+/* ------------------------------------------------------------------ */
+/* 3D tilt: follows the mouse; horizontal drag or device tilt on touch */
+/* ------------------------------------------------------------------ */
+// Phones rest flat so the small pixel text stays crisp; desktop rests at a slight angle.
+const coarse = matchMedia('(pointer: coarse)').matches;
+const REST = coarse ? { rx: 0, ry: 0 } : { rx: 4, ry: -6 };
+const clamp = (n: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, n));
+
+function setTilt(rx: number, ry: number) {
+  const st = consoleEl.style;
+  st.setProperty('--rx', `${rx.toFixed(2)}deg`);
+  st.setProperty('--ry', `${ry.toFixed(2)}deg`);
+  // move the specular highlight opposite to the tilt
+  st.setProperty('--mx', `${(50 - ry * 3).toFixed(1)}%`);
+  st.setProperty('--my', `${(20 + rx * 3).toFixed(1)}%`);
+}
+const rest = () => setTilt(REST.rx, REST.ry);
+
+function initTilt() {
+  rest();
+  // Re-checked on every event so turning on Reduce Motion takes effect live.
+  const still = () => reducedMotion.matches;
+  reducedMotion.addEventListener('change', () => { if (still()) rest(); });
+
+  // Mouse / pen: tilt toward the pointer anywhere on the page
+  document.addEventListener('pointermove', (e) => {
+    if (e.pointerType === 'touch' || still()) return;
+    const r = consoleEl.getBoundingClientRect();
+    const nx = clamp((e.clientX - (r.left + r.width / 2)) / (innerWidth / 2), -1, 1);
+    const ny = clamp((e.clientY - (r.top + r.height / 2)) / (innerHeight / 2), -1, 1);
+    setTilt(-ny * 10, nx * 16);
+  });
+  document.documentElement.addEventListener('pointerleave', rest);
+
+  // Touch: horizontal drag on the device turns it (vertical drag still scrolls)
+  let startX = 0;
+  let dragging = false;
+  consoleEl.addEventListener('pointerdown', (e) => {
+    if (e.pointerType !== 'touch' || still()) return;
+    startX = e.clientX;
+    dragging = true;
+    consoleEl.classList.add('dragging');
+  });
+  consoleEl.addEventListener('pointermove', (e) => {
+    if (!dragging || e.pointerType !== 'touch' || still()) return;
+    const dx = (e.clientX - startX) / consoleEl.clientWidth;
+    setTilt(REST.rx, clamp(REST.ry + dx * 40, -18, 18));
+  });
+  const end = () => { dragging = false; consoleEl.classList.remove('dragging'); rest(); };
+  consoleEl.addEventListener('pointerup', end);
+  consoleEl.addEventListener('pointercancel', end);
+
+  // Phones that expose orientation without a permission prompt
+  const DOE = window.DeviceOrientationEvent as unknown as { requestPermission?: unknown } | undefined;
+  if (DOE && typeof DOE.requestPermission !== 'function') {
+    window.addEventListener('deviceorientation', (e) => {
+      if (dragging || still() || e.beta == null || e.gamma == null) return;
+      setTilt(clamp((e.beta - 45) / 4, -8, 10), clamp(e.gamma / 3, -14, 14));
+    });
+  }
+}
+
+/* ------------------------------------------------------------------ */
+initTilt();
 setSound(soundOn, true);
 boot();
