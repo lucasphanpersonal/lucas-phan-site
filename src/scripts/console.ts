@@ -181,6 +181,18 @@ function move(dir: 'up' | 'down' | 'left' | 'right') {
     return;
   }
 
+  // Up/Down scroll a text window first (e.g. a long project description above its
+  // links), then move the cursor once the window reaches that edge.
+  const scroller = view.querySelector<HTMLElement>('[data-scroll]');
+  if (scroller && (dir === 'up' || dir === 'down')) {
+    const canDown = scroller.scrollTop + scroller.clientHeight < scroller.scrollHeight - 1;
+    const canUp = scroller.scrollTop > 0;
+    if ((dir === 'down' && canDown) || (dir === 'up' && canUp)) {
+      scroller.scrollBy({ top: (dir === 'down' ? 1 : -1) * scroller.clientHeight * 0.5 });
+      return;
+    }
+  }
+
   const cols = Number(view.querySelector<HTMLElement>('[data-cols]')?.dataset.cols ?? 1);
   const step = dir === 'up' ? -cols : dir === 'down' ? cols : dir === 'left' ? -1 : 1;
   const next = (idx + step + items.length) % items.length;
