@@ -352,7 +352,9 @@ document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   // Closed lid: any key (except Tab, so keyboard users can still move) opens it.
   if (isClosed()) {
-    if (e.key !== 'Tab') { e.preventDefault(); openLid(); }
+    // Links and buttons outside the device (skip link, footer links) keep their own keys.
+    const onOutsideControl = (e.target as HTMLElement).closest('a, button, input, textarea, select') && !consoleEl.contains(e.target as Node);
+    if (e.key !== 'Tab' && !onOutsideControl) { e.preventDefault(); openLid(); }
     return;
   }
   if (lidMoving) { if (e.key !== 'Tab') e.preventDefault(); return; }
