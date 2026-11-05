@@ -1,11 +1,11 @@
 ---
 title: Guess the Character
 description: A Hedbanz-style party game where everyone wears a character they cannot see, and you guess yours by asking yes or no questions.
-date: 2026-01-01 # PLACEHOLDER: release or start date
+date: 2026-07-01
 tech: [JavaScript, Node.js, Discord.js, Socket.IO, SQLite, Device tilt controls]
 links:
   - label: Play
-    url: "#" # PLACEHOLDER: game URL
+    url: "https://guess-the-character.com"
   - label: Source
     url: "#" # PLACEHOLDER: GitHub repo URL (the repo is private for now)
 status: live
