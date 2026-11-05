@@ -214,6 +214,7 @@ function activate(item?: HTMLElement) {
   else if (action === 'back') back();
   else if (action === 'toggle-sound') setSound(!soundOn);
   else if (action === 'replay') boot(true);
+  else if (action === 'close-lid') closeLid();
   else if (action.startsWith('link:')) followLink(action.slice(5));
 }
 
@@ -283,6 +284,45 @@ function endBoot() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Lid: starts closed, showing its cover                               */
+/* ------------------------------------------------------------------ */
+const coverEl = consoleEl.querySelector<HTMLButtonElement>('[data-open-lid]');
+const isClosed = () => consoleEl.dataset.lid === 'closed';
+let lidMoving = false;
+
+/** Swings the lid, then runs `then`. With reduced motion the swing is instant. */
+function swingLid(open: boolean, then?: () => void) {
+  lidMoving = true;
+  consoleEl.dataset.lid = open ? 'open' : 'closed';
+  window.setTimeout(() => {
+    lidMoving = false;
+    then?.();
+  }, reducedMotion.matches ? 0 : 900);
+}
+
+function openLid() {
+  if (!isClosed() || lidMoving) return;
+  swingLid(true, boot);
+}
+
+function closeLid() {
+  if (isClosed() || lidMoving) return;
+  booting = false;
+  bootTimers.forEach(clearTimeout);
+  bootEl.hidden = true;
+  bootEl.classList.remove('run');
+  consoleEl.classList.remove('on');
+  stack.length = 0;
+  stack.push('main');
+  swingLid(false, () => {
+    announce('Lid closed. Press any key or select the cover to open it.');
+    coverEl?.focus({ preventScroll: true });
+  });
+}
+
+coverEl?.addEventListener('click', openLid);
+
+/* ------------------------------------------------------------------ */
 /* Input                                                               */
 /* ------------------------------------------------------------------ */
 const keyMap: Record<string, Btn> = {
@@ -306,6 +346,12 @@ let shiftAlone = false;
 
 document.addEventListener('keydown', (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
+  // Closed lid: any key (except Tab, so keyboard users can still move) opens it.
+  if (isClosed()) {
+    if (e.key !== 'Tab') { e.preventDefault(); openLid(); }
+    return;
+  }
+  if (lidMoving) { if (e.key !== 'Tab') e.preventDefault(); return; }
   if (e.key === 'Shift') { shiftAlone = !e.repeat; return; }
   shiftAlone = false;
 
@@ -505,4 +551,5 @@ function initTilt() {
 /* ------------------------------------------------------------------ */
 initTilt();
 setSound(soundOn, true);
-boot();
+// The handheld starts with its lid closed; opening the lid runs the boot splash.
+if (!isClosed()) boot();
