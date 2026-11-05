@@ -112,14 +112,6 @@ function render(speak = true) {
   const name = stack[stack.length - 1];
   views.forEach((v, k) => { v.hidden = k !== name; });
   const view = current();
-  view.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => {
-    updateScrollHint(el);
-    if (!el.dataset.hinted) {
-      el.dataset.hinted = '1';
-      el.addEventListener('scroll', () => updateScrollHint(el), { passive: true });
-      scrollResize.observe(el);
-    }
-  });
   const items = itemsOf(view);
   const idx = Math.min(cursor.get(name) ?? 0, Math.max(items.length - 1, 0));
   items.forEach((it, i) => {
@@ -131,6 +123,15 @@ function render(speak = true) {
   sel?.scrollIntoView({ block: 'nearest' });
   const help = sel?.dataset.help ?? '';
   view.querySelectorAll<HTMLElement>('[data-help-out]').forEach((h) => { h.textContent = help; });
+  // Measure only after the text above is in place, so the hint matches the new description.
+  view.querySelectorAll<HTMLElement>('[data-scroll]').forEach((el) => {
+    updateScrollHint(el);
+    if (!el.dataset.hinted) {
+      el.dataset.hinted = '1';
+      el.addEventListener('scroll', () => updateScrollHint(el), { passive: true });
+      scrollResize.observe(el);
+    }
+  });
   if (speak) {
     const label = view.getAttribute('aria-label') ?? '';
     const itemText = sel?.textContent?.replace(/\s+/g, ' ').trim();

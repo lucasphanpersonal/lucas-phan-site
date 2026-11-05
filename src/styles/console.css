@@ -498,7 +498,7 @@ a { color: #ffb4a3; }
 /* Projects */
 .v-projects, .v-contact, .v-config { grid-template-rows: auto 1fr auto; }
 /* Projects: the description is a scroll window (the line-clamp never applied here). */
-.v-projects .help { display: block; height: calc(1.6em * 2 + 3.2cqw); overflow-y: auto; scrollbar-width: none; }
+.v-projects .help { display: block; height: calc(1.6em * 2 + 3.2cqw + 1.1cqw); overflow-y: auto; scrollbar-width: none; }
 .v-projects .help::-webkit-scrollbar { display: none; }
 .slots {
   display: grid; gap: 1.6cqw; align-content: start;
