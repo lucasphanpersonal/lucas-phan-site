@@ -302,7 +302,11 @@ function swingLid(open: boolean, then?: () => void) {
 
 function openLid() {
   if (!isClosed() || lidMoving) return;
-  swingLid(true, boot);
+  swingLid(true, () => {
+    boot();
+    // The cover is hidden once the lid is open, so move focus to the screen.
+    screen.focus({ preventScroll: true });
+  });
 }
 
 function closeLid() {

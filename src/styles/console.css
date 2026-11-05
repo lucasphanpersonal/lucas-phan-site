@@ -631,6 +631,9 @@ kbd {
   :root { --w: min(45vw, 440px, calc((100svh - 1.5rem) / 0.9)); }
   .console { width: calc(var(--w) * 2.04); height: calc(var(--u) * 88); }
   .lid-half { transform: none; top: calc(var(--u) * 3); }
+  /* The lid stays open here, so the cover must not be flipped. */
+  .js .console[data-lid='closed'] .cover { transform: none; }
+  .js .console[data-lid='closed'] .lid-body > .face { transform: none; }
   .base-half { left: calc(var(--u) * 104); top: calc(var(--u) * -10); }
   .lid-knuckle, .base-knuckle, .shoulder, .shoulder-hit { display: none; }
   .floor { display: none; }
