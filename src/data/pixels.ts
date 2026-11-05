@@ -35,7 +35,43 @@ export const handSprite = pixelSvg(
 );
 
 /** 32x32 GBA-era chibi sprites: Lucas (silver aviators) and his husky. Original art, generated from shapes then hand-tuned. */
-const spritePalette: Record<string, string> = {"a":"#4a3b58","b":"#24192e","c":"#171024","d":"#f7d3ae","e":"#e8b48a","f":"#c98f6a","g":"#f59a85","h":"#e8735a","i":"#b9503f","j":"#5a6bb8","k":"#3d4a8a","l":"#2a3566","n":"#5a4030","o":"#3a2a20","p":"#b4bccf","q":"#8d96ab","r":"#646c82","s":"#5a6078","t":"#3a3f52","u":"#252938","v":"#ffffff","w":"#eef1f8","x":"#c3c9da","y":"#0e0b1e","z":"#7a4a3a","A":"#7a2e2e","B":"#1a2048","C":"#1c1f2e","D":"#5cb4ee","E":"#dff3ff","F":"#14112a","G":"#a8503e","H":"#6b4328","I":"#14112a","J":"#c3c9d6","K":"#f08a8a"};
+const spritePalette: Record<string, string> = {
+  a: '#4a3b58',
+  b: '#24192e',
+  c: '#171024',
+  d: '#f7d3ae',
+  e: '#e8b48a',
+  f: '#c98f6a',
+  g: '#f59a85',
+  h: '#e8735a',
+  i: '#b9503f',
+  j: '#5a6bb8',
+  k: '#3d4a8a',
+  l: '#2a3566',
+  n: '#5a4030',
+  o: '#3a2a20',
+  p: '#b4bccf',
+  q: '#8d96ab',
+  r: '#646c82',
+  s: '#5a6078',
+  t: '#3a3f52',
+  u: '#252938',
+  v: '#ffffff',
+  w: '#eef1f8',
+  x: '#c3c9da',
+  y: '#0e0b1e',
+  z: '#7a4a3a',
+  A: '#7a2e2e',
+  B: '#1a2048',
+  C: '#1c1f2e',
+  D: '#5cb4ee',
+  E: '#dff3ff',
+  F: '#14112a',
+  G: '#a8503e',
+  H: '#6b4328',
+  J: '#c3c9d6',
+  K: '#f08a8a',
+};
 
 export const portraitSprite = pixelSvg(
   [
@@ -92,8 +128,8 @@ export const huskySprite = pixelSvg(
     '...yyqqqttHttqqqqqqttHttqqryy...',
     '.....CpttHEHttqqqqttHEHttrC.....',
     '.....CpttHFHttqqqqttHFHttrC.....',
-    '.....CqqttHttqqIIqqttHttqrC.....',
-    '......CpqtwwwwIIIIwwwwtqrC......',
+    '.....CqqttHttqqFFqqttHttqrC.....',
+    '......CpqtwwwwFFFFwwwwtqrC......',
     '......CqqwwwwwwwwwwwwwwqrC......',
     '.......CqxwwwwwFFwwwwwxrC.......',
     '........CCwwwwwwGwwwwxCC.CC.....',
