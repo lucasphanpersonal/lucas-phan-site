@@ -1,5 +1,6 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import sitemap from '@astrojs/sitemap';
 
 // PLACEHOLDER: set `site` to your real URL once you know it (used for the
 // social preview image and canonical links).
@@ -10,4 +11,5 @@ export default defineConfig({
   site: process.env.SITE_URL ?? 'https://lucasphan.example.com',
   base: process.env.BASE_PATH ?? '/',
   trailingSlash: 'ignore',
+  integrations: [sitemap()],
 });
