@@ -1,0 +1,39 @@
+---
+import '@fontsource/press-start-2p';
+import '../styles/console.css';
+import BaseHead from '../layouts/BaseHead.astro';
+import Console from '../components/Console.astro';
+import { url } from '../data/util';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title="Lucas Phan" />
+    <script is:inline>document.documentElement.classList.add('js');</script>
+  </head>
+  <body class="stage">
+    <a class="skip" href={url('/about/')}>Skip the game: read the plain version</a>
+    <h1 class="visually-hidden">Lucas Phan</h1>
+    <main>
+      <Console />
+      <div class="below">
+        <p class="hint" id="controls-hint">
+          <span><kbd>↑↓←→</kbd>/<kbd>WASD</kbd> move</span>
+          <span><kbd>Enter</kbd>/<kbd>P</kbd> A</span>
+          <span><kbd>⌫</kbd>/<kbd>L</kbd> B</span>
+          <span><kbd>Space</kbd> Start</span>
+          <span><kbd>Shift</kbd> Select</span>
+          <span><kbd>Esc</kbd> close</span>
+        </p>
+        <p class="below-links">
+          <button type="button" class="sound-toggle" data-sound-toggle aria-pressed="false">Sound: Off</button>
+          <a href={url('/about/')}>Plain version</a>
+          <a href={url('/projects/')}>Projects list</a>
+        </p>
+      </div>
+    </main>
+    <script>
+      import '../scripts/console.ts';
+    </script>
+  </body>
+</html>

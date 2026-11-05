@@ -1,0 +1,26 @@
+---
+import PlainLayout from '../../layouts/PlainLayout.astro';
+import { getProjects, formatDate, url } from '../../data/util';
+const projects = await getProjects();
+---
+<PlainLayout title="Projects" description="Projects by Lucas Phan.">
+  <h1>Projects</h1>
+  <ul class="cards">
+    {projects.map((p) => (
+      <li>
+        <h2>
+          {p.data.status === 'empty' ? (
+            <>{p.data.title} <span class="muted">(coming soon)</span></>
+          ) : (
+            <a href={url(`/projects/${p.id}/`)}>{p.data.title}</a>
+          )}
+        </h2>
+        <p>{p.data.description}</p>
+        {p.data.date && <p class="muted"><time datetime={p.data.date.toISOString()}>{formatDate(p.data.date)}</time>{p.data.status === 'wip' && ' · in progress'}</p>}
+        {p.data.tech.length > 0 && (
+          <p><span class="visually-hidden">Built with: </span>{p.data.tech.map((t) => <span class="tag">{t}</span>)}</p>
+        )}
+      </li>
+    ))}
+  </ul>
+</PlainLayout>

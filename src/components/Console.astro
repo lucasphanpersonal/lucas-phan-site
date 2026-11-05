@@ -1,0 +1,241 @@
+---
+/**
+ * The handheld: lid (screen) + hinge + base (controls).
+ * Every menu "view" is real HTML rendered here at build time; console.ts only
+ * shows/hides views and moves the cursor.
+ */
+import { profile, abilities, contacts } from '../data/profile';
+import { getProjects, formatDate, url, isExternal } from '../data/util';
+import { handSprite, portraitSprite, svgDataUri } from '../data/pixels';
+
+const projects = await getProjects();
+const filled = projects.filter((p) => p.data.status !== 'empty').length;
+const hand = svgDataUri(handSprite);
+const pad = (n: number) => String(n).padStart(2, ' ');
+const pct = (now: number, max: number) => `${Math.round((now / max) * 100)}%`;
+const statusLabel = { live: 'LIVE', wip: 'WIP', empty: '----' } as const;
+---
+<div class="console" style={`--hand: url("${hand}")`}>
+  <!-- ===== LID ===== -->
+  <div class="lid">
+    <div class="bezel">
+      <div class="bezel-row">
+        <span class="led" aria-hidden="true"></span>
+        <span class="bezel-label">LUCAS PHAN</span>
+        <span class="bezel-mark" aria-hidden="true">◆ POCKET EDITION</span>
+      </div>
+
+      <div
+        class="screen"
+        id="screen"
+        role="application"
+        tabindex="0"
+        aria-roledescription="game menu"
+        aria-label="Lucas Phan handheld menu"
+        aria-describedby="controls-hint"
+      >
+        <noscript>
+          <div class="noscript win">
+            <p>This handheld needs JavaScript.</p>
+            <p><a href={url('/about/')}>Read the plain version</a></p>
+          </div>
+        </noscript>
+
+        <!-- Boot splash -->
+        <div class="boot" id="boot" hidden>
+          <p class="boot-name">LUCAS PHAN</p>
+          <p class="boot-sub">PRESS START</p>
+        </div>
+
+        <!-- MAIN MENU -->
+        <section class="view v-main" data-view="main" aria-label="Main menu" hidden>
+          <div class="win party">
+            <div class="party-top">
+              <div class="portrait" set:html={portraitSprite} />
+              <div>
+                <p class="hl">{profile.name}</p>
+                <p class="dim">{profile.job}</p>
+                <p><span class="lbl">LV</span> {profile.level}</p>
+              </div>
+            </div>
+            <p class="stat-line"><span class="lbl">HP</span> <span>{profile.hp.now}/{profile.hp.max}</span></p>
+            <div class="bar hp" aria-hidden="true"><i style={`width:${pct(profile.hp.now, profile.hp.max)}`}></i></div>
+            <p class="stat-line"><span class="lbl">MP</span> <span>{pad(profile.mp.now)}/{profile.mp.max}</span></p>
+            <div class="bar mp" aria-hidden="true"><i style={`width:${pct(profile.mp.now, profile.mp.max)}`}></i></div>
+          </div>
+          <ul class="win cmd menu">
+            <li data-item data-action="open:status" data-help="View character status">Status</li>
+            <li data-item data-action="open:projects" data-help="Load a project file">Projects</li>
+            <li data-item data-action="open:abilities" data-help="Skills learned so far">Abilities</li>
+            <li data-item data-action="open:contact" data-help="Send a message">Contact</li>
+            <li data-item data-action="open:config" data-help="Sound and settings">Config</li>
+          </ul>
+          <div class="win info">
+            <p><span class="lbl">Time</span> <span data-playtime>00:00</span></p>
+            <p><span class="lbl">Files</span> <span>{filled}</span></p>
+          </div>
+          <p class="win help" data-help-out></p>
+        </section>
+
+        <!-- STATUS -->
+        <section class="view v-status" data-view="status" aria-label="Status" hidden>
+          <div class="win status-top">
+            <div class="portrait" set:html={portraitSprite} />
+            <div class="status-id">
+              <p class="hl">{profile.name}</p>
+              <p><span class="lbl">Job</span> {profile.job}</p>
+              <p><span class="lbl">LV</span> {profile.level} <span class="lbl sp">EXP</span> {profile.exp}</p>
+            </div>
+            <div class="status-bars">
+              <p class="stat-line"><span class="lbl">HP</span> <span>{profile.hp.now}/{profile.hp.max}</span></p>
+              <div class="bar hp" aria-hidden="true"><i style={`width:${pct(profile.hp.now, profile.hp.max)}`}></i></div>
+              <p class="stat-line"><span class="lbl">MP</span> <span>{pad(profile.mp.now)}/{profile.mp.max}</span></p>
+              <div class="bar mp" aria-hidden="true"><i style={`width:${pct(profile.mp.now, profile.mp.max)}`}></i></div>
+            </div>
+          </div>
+          <dl class="win stats">
+            {profile.stats.map((s) => (
+              <div><dt class="lbl">{s.label}</dt><dd>{s.value}</dd></div>
+            ))}
+          </dl>
+          <div class="win bio" data-scroll>
+            <p>{profile.bio}</p>
+          </div>
+          <p class="win help">↑↓ Scroll bio · B: Back</p>
+        </section>
+
+        <!-- PROJECTS -->
+        <section class="view v-projects" data-view="projects" aria-label="Projects" hidden>
+          <p class="win title">Projects <span class="dim">· Load which file?</span></p>
+          <ul class="slots" data-list>
+            {projects.map((p, i) => (
+              <li
+                class:list={['win', 'slot', { empty: p.data.status === 'empty' }]}
+                data-item
+                data-action={`open:project-${p.id}`}
+                data-help={p.data.description}
+              >
+                <p><span class="lbl">File {i + 1}</span> {p.data.status === 'empty' ? 'Empty Slot' : p.data.title}</p>
+                <p class="dim small">
+                  {p.data.status === 'empty'
+                    ? 'Coming soon'
+                    : `${formatDate(p.data.date)} · ${statusLabel[p.data.status]}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+          <p class="win help" data-help-out></p>
+        </section>
+
+        <!-- PROJECT DETAILS (one view per project file) -->
+        {projects.map((p) => {
+          const d = p.data;
+          const empty = d.status === 'empty';
+          return (
+            <section class="view v-detail" data-view={`project-${p.id}`} aria-label={d.title} hidden>
+              <p class="win title">{empty ? 'Empty Slot' : d.title}</p>
+              <div class="win detail-body" data-scroll>
+                <p class="small">{d.description}</p>
+                {d.date && <p class="small"><span class="lbl">Date</span> {formatDate(d.date)}</p>}
+                {!empty && <p class="small"><span class="lbl">State</span> {d.status === 'wip' ? 'In progress' : 'Released'}</p>}
+                {d.tech.length > 0 && <p class="small"><span class="lbl">Tech</span> {d.tech.join(', ')}</p>}
+              </div>
+              <ul class="win links menu row">
+                {d.links.map((l) => (
+                  <li data-item data-action={`link:${l.url}`} data-help={`Open ${l.label}`}>{l.label}</li>
+                ))}
+                {!empty && (
+                  <li data-item data-action={`link:${url(`/projects/${p.id}/`)}`} data-help="Read the full write-up">Info</li>
+                )}
+                <li data-item data-action="back" data-help="Return to files">Back</li>
+              </ul>
+              <p class="win help" data-help-out></p>
+            </section>
+          );
+        })}
+
+        <!-- ABILITIES -->
+        <section class="view v-abilities" data-view="abilities" aria-label="Abilities" hidden>
+          <p class="win help top" data-help-out></p>
+          <ul class="win menu grid2" data-cols="2" data-list>
+            {abilities.map((a) => (
+              <li data-item data-help={a.note}>
+                <span>{a.name}</span> <span class="lv">{a.level}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="win title small">Abilities <span class="dim">· B: Back</span></p>
+        </section>
+
+        <!-- CONTACT -->
+        <section class="view v-contact" data-view="contact" aria-label="Contact" hidden>
+          <p class="win title">Contact</p>
+          <ul class="win menu contact-list" data-list>
+            {contacts.map((c) => (
+              <li data-item data-action={`link:${c.url}`} data-help={`A: Open ${c.label}`}>
+                <span>{c.label}</span>
+                <span class="dim small value">{c.value}</span>
+              </li>
+            ))}
+          </ul>
+          <p class="win help" data-help-out></p>
+        </section>
+
+        <!-- CONFIG -->
+        <section class="view v-config" data-view="config" aria-label="Config" hidden>
+          <p class="win title">Config</p>
+          <ul class="win menu config-list">
+            <li data-item data-action="toggle-sound" data-toggle="sound" data-help="Left/Right or A to switch sound">
+              <span>Sound</span>
+              <span class="opts"><span data-opt="on">On</span> <span data-opt="off">Off</span></span>
+            </li>
+            <li data-item data-action="replay" data-help="Watch the power-on intro again">Replay intro</li>
+            <li data-item data-action={`link:${url('/about/')}`} data-help="Same info, no game">Plain version</li>
+            <li data-item data-action="back" data-help="Close this window">Back</li>
+          </ul>
+          <p class="win help" data-help-out></p>
+        </section>
+      </div>
+
+      <p class="bezel-sub" aria-hidden="true">LP-01 · COLOR DISPLAY</p>
+    </div>
+  </div>
+
+  <div class="hinge" aria-hidden="true"><i></i><i></i></div>
+
+  <!-- ===== BASE ===== -->
+  <div class="base">
+    <div class="power" aria-hidden="true"><span class="power-led"></span> POWER</div>
+
+    <div class="dpad" role="group" aria-label="Direction pad">
+      <button type="button" class="d up" data-btn="up" aria-label="Up"></button>
+      <button type="button" class="d left" data-btn="left" aria-label="Left"></button>
+      <span class="d mid" aria-hidden="true"></span>
+      <button type="button" class="d right" data-btn="right" aria-label="Right"></button>
+      <button type="button" class="d down" data-btn="down" aria-label="Down"></button>
+    </div>
+
+    <div class="ab" role="group" aria-label="Action buttons">
+      <button type="button" class="round b" data-btn="b" aria-label="B, back">B</button>
+      <button type="button" class="round a" data-btn="a" aria-label="A, select">A</button>
+    </div>
+
+    <div class="ss" role="group" aria-label="Start and Select">
+      <span class="pill-wrap">
+        <button type="button" class="pill" data-btn="select" aria-label="Select, open config"></button>
+        <span aria-hidden="true">SELECT</span>
+      </span>
+      <span class="pill-wrap">
+        <button type="button" class="pill" data-btn="start" aria-label="Start, main menu"></button>
+        <span aria-hidden="true">START</span>
+      </span>
+    </div>
+
+    <div class="logo" aria-hidden="true">LP</div>
+    <div class="speaker" aria-hidden="true">
+      {Array.from({ length: 12 }).map(() => <i></i>)}
+    </div>
+  </div>
+
+  <p class="visually-hidden" aria-live="polite" id="announce"></p>
+</div>

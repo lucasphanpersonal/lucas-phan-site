@@ -1,0 +1,12 @@
+---
+import PlainLayout from '../layouts/PlainLayout.astro';
+import { abilities } from '../data/profile';
+---
+<PlainLayout title="Skills" description="Skills and tools Lucas Phan works with.">
+  <h1>Skills</h1>
+  <ul>
+    {abilities.map((a) => (
+      <li><strong>{a.name}</strong>: {a.note}</li>
+    ))}
+  </ul>
+</PlainLayout>

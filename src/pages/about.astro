@@ -1,0 +1,13 @@
+---
+import PlainLayout from '../layouts/PlainLayout.astro';
+import { profile } from '../data/profile';
+---
+<PlainLayout title="About" description={profile.bio}>
+  <h1>{profile.name}</h1>
+  <p>{profile.bio}</p>
+  <dl class="facts">
+    <dt>Role</dt><dd>{profile.job}</dd>
+    <dt>Based in</dt><dd>{profile.location}</dd>
+    <dt>Experience</dt><dd>{profile.exp}</dd>
+  </dl>
+</PlainLayout>

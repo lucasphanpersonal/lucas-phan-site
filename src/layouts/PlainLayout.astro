@@ -1,0 +1,46 @@
+---
+import BaseHead from './BaseHead.astro';
+import { url } from '../data/util';
+import '../styles/plain.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+const { title, description } = Astro.props;
+const path = Astro.url.pathname.replace(import.meta.env.BASE_URL.replace(/\/$/, ''), '');
+const nav = [
+  { href: '/about/', label: 'About' },
+  { href: '/projects/', label: 'Projects' },
+  { href: '/skills/', label: 'Skills' },
+  { href: '/contact/', label: 'Contact' },
+];
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <BaseHead title={`${title} · Lucas Phan`} description={description} />
+  </head>
+  <body class="plain">
+    <a class="skip" href="#main">Skip to content</a>
+    <header>
+      <p class="site-name"><a href={url('/about/')}>Lucas Phan</a></p>
+      <nav aria-label="Main">
+        <ul>
+          {nav.map((n) => (
+            <li>
+              <a href={url(n.href)} aria-current={path.startsWith(n.href) ? 'page' : undefined}>{n.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+      <p class="console-link"><a href={url('/')}>▶ Play the handheld version</a></p>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer>
+      <p>This is the plain version of the site. Same content, no game.</p>
+    </footer>
+  </body>
+</html>

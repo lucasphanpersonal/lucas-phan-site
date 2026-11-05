@@ -1,0 +1,12 @@
+---
+import PlainLayout from '../layouts/PlainLayout.astro';
+import { contacts } from '../data/profile';
+---
+<PlainLayout title="Contact" description="How to reach Lucas Phan.">
+  <h1>Contact</h1>
+  <ul>
+    {contacts.map((c) => (
+      <li>{c.label}: <a href={c.url} rel="noopener me">{c.value}</a></li>
+    ))}
+  </ul>
+</PlainLayout>
