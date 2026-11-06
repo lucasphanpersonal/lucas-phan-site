@@ -73,6 +73,17 @@ a { color: #ffb4a3; }
   --u: calc(var(--w) / 100);
   --depth: calc(var(--u) * 15);
   --k: calc(var(--u) * 2.6); /* size of one pixel step on the shell silhouette */
+  --knuckle-clip: polygon(
+    var(--k) 0, calc(100% - var(--k)) 0,
+    calc(100% - var(--k)) calc(var(--k) / 2), calc(100% - var(--k) / 2) calc(var(--k) / 2),
+    calc(100% - var(--k) / 2) var(--k), 100% var(--k),
+    100% calc(100% - var(--k)), calc(100% - var(--k) / 2) calc(100% - var(--k)),
+    calc(100% - var(--k) / 2) calc(100% - var(--k) / 2), calc(100% - var(--k)) calc(100% - var(--k) / 2),
+    calc(100% - var(--k)) 100%, var(--k) 100%,
+    var(--k) calc(100% - var(--k) / 2), calc(var(--k) / 2) calc(100% - var(--k) / 2),
+    calc(var(--k) / 2) calc(100% - var(--k)), 0 calc(100% - var(--k)),
+    0 var(--k), calc(var(--k) / 2) var(--k),
+    calc(var(--k) / 2) calc(var(--k) / 2), var(--k) calc(var(--k) / 2));
   --shell-clip: polygon(
     calc(var(--k) * 2) 0, calc(100% - var(--k) * 2) 0,
     calc(100% - var(--k) * 2) var(--k), calc(100% - var(--k)) var(--k),
@@ -179,14 +190,12 @@ a { color: #ffb4a3; }
 .lid-knuckle {
   top: calc(var(--u) * 81); left: calc(var(--u) * 21);
   width: calc(var(--u) * 58); height: calc(var(--u) * 12);
-  border-radius: calc(var(--u) * 3);
 }
 .base-knuckle {
   top: 0; width: calc(var(--u) * 20); height: calc(var(--u) * 12);
-  border-radius: calc(var(--u) * 3);
 }
-.base-knuckle.left { left: 0; border-top-left-radius: calc(var(--u) * 6); }
-.base-knuckle.right { right: 0; border-top-right-radius: calc(var(--u) * 6); }
+.base-knuckle.left { left: 0; }
+.base-knuckle.right { right: 0; }
 .base-body {
   top: calc(var(--u) * 11); left: 0; width: 100%; height: calc(var(--u) * 86);
 }
@@ -204,8 +213,11 @@ a { color: #ffb4a3; }
 .face.cyl {
   background: linear-gradient(180deg,
     var(--shell-hi) 0 25%, var(--shell) 25% 60%, var(--shell-lo) 60% 85%, var(--shell-deep) 85%);
-  clip-path: polygon(var(--k) 0, calc(100% - var(--k)) 0, 100% var(--k), 100% calc(100% - var(--k)), calc(100% - var(--k)) 100%, var(--k) 100%, 0 calc(100% - var(--k)), 0 var(--k));
+  clip-path: var(--knuckle-clip);
 }
+/* The hinge knuckles are pixel-cut like the shell: the face and its slabs share
+   one stepped outline, with no rounded corners. */
+.lid-knuckle > .slab, .base-knuckle > .slab { clip-path: var(--knuckle-clip); }
 /* The soft light sheen is gone: pixel art has no smooth highlights. */
 .sheen { display: none; }
 
